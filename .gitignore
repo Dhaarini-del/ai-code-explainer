@@ -1,0 +1,12 @@
+# API Keys and Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Frontend dependencies (not needed for Streamlit)
+node_modules/
+dist/

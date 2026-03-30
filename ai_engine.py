@@ -4,9 +4,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # Load .env from the project root (one level up from the backend folder)
-current_dir = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(os.path.dirname(current_dir), ".env")
-load_dotenv(dotenv_path=env_path)
+load_dotenv()
 
 # Attempt to get key from OS environment or Streamlit Secrets fallback
 try:

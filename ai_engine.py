@@ -15,23 +15,31 @@ genai.configure(api_key=api_key)
 
 def get_ai_explanation(language, code):
     prompt = (
+        "You are an expert software engineer. "
         f"Analyze this {language} code snippet.\n"
         "Provide the output in the following format:\n"
-        "1. 🧩 **About the Language**: Brief details about the programming language and its key features.\n"
-        "2. 📦 **About the Libraries**: Explain the purpose of any libraries or modules used in the code.\n"
-        "3. 📊 **Difficulty Level**: Estimate the complexity (Beginner, Intermediate, or Advanced) with a short reason.\n"
-        "4. 🪜 **Step-by-step Execution**: Detailed walkthrough of how the code executes line by line.\n"
-        "5.  **Predicted Output**: Show the expected output of this code. If there are inputs required, mention them.\n"
-        "6. 🛠️ **Error Analysis & Debugging**: Check for any syntax or logical errors. If found, name the error type, explain it, and provide the corrected code. If no errors, state 'No errors found'.\n"
-        "7. 💡 **Code Explanation**: Breakdown of the logic and purpose.\n"
-        "8. ⏳ **Time and Space Complexity**: Analyze the performance.\n"
-        "9. 🚀 **Suggested Improvements**: Recommendations for better code quality or optimization.\n\n"
+        "### 1. 🪜 Step-by-Step Explanation\nProvide a detailed walkthrough of how the code executes line by line.\n\n"
+        "### 2. ⏳ Time and Space Complexity\nAnalyze the performance using Big O notation.\n\n"
+        "### 3. 🚀 Suggested Improvements\nRecommendations for better code quality, performance, or security.\n\n"
         f"Code:\n{code}"
     )
     try:
-        # Try preferred models in order
-        models_to_try = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.5-pro-latest']
+        # Dynamically discover models available to this API key
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         
+        preferred_order = [
+            'models/gemini-1.5-flash', 
+            'models/gemini-1.5-pro', 
+            'models/gemini-pro',
+            'gemini-1.5-flash',
+            'gemini-pro'
+        ]
+        
+        models_to_try = [m for m in preferred_order if m in available_models or m.replace('models/', '') in available_models]
+        
+        if not models_to_try and available_models:
+            models_to_try = [available_models[0]]
+
         for model_name in models_to_try:
             try:
                 model = genai.GenerativeModel(model_name)
@@ -40,16 +48,10 @@ def get_ai_explanation(language, code):
             except Exception:
                 continue
         
-        # If all predefined models fail, list available models and try the first Gemini one
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        gemini_model = next((m for m in available_models if 'gemini' in m), None)
-        
-        if gemini_model:
-            model = genai.GenerativeModel(gemini_model)
-            response = model.generate_content(prompt)
-            return response.text
+        if not available_models:
+            return "AI Error: No models available for this API key. Ensure the Gemini API is enabled in your Google Cloud Project."
             
-        return f"AI Error: No compatible Gemini models found. Available: {available_models}"
+        return f"AI Error: Failed to generate content using available models: {', '.join(models_to_try)}"
 
     except Exception as e:
         return f"AI Error: {str(e)}"

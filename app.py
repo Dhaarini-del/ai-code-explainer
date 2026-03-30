@@ -26,16 +26,17 @@ except Exception as e:
 @st.cache_resource
 def get_available_models():
     """Fetch and cache available models to improve performance."""
-    try:
-        return [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-    except Exception:
-        return []
+    return [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
 
 def explain_code_with_fallback(prompt, temperature):
     """Tries multiple models to ensure the request succeeds even if specific models are unavailable."""
-    available_models = get_available_models()
+    try:
+        available_models = get_available_models()
+    except Exception as e:
+        raise Exception(f"Failed to list models: {e}. This usually indicates an invalid or restricted API key.")
+
     if not available_models:
-        raise Exception("Failed to list models. Please check your API key.")
+        raise Exception("The API call succeeded but returned no models. Check your Google AI Studio project settings.")
 
     # 2. Prioritize models in order of performance/cost
     preferred_order = [
